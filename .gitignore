@@ -2,3 +2,4 @@ deepfake_dataset/deepfake
 deepfake_dataset/real
 FF_data
 .DS_Store
+FF_data/
