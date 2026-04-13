@@ -6,6 +6,7 @@
 # Usage:
 #   Full download:    bash download_ff_data.sh
 #   Sample (1 video): bash download_ff_data.sh --sample
+#   N videos:         bash download_ff_data.sh --num_videos 5
 # =============================================================================
 
 # --- Configuration ---
@@ -15,19 +16,24 @@ EXTRACT_SCRIPT="$SCRIPT_DIR/FaceForensics/dataset/extract_compressed_videos.py"
 OUTPUT_BASE=~/Documents/INF-Deep_Learning/FF_data
 COMPRESSION="c40"
 SERVER="EU2"
-NUM_VIDEOS=1  # used only in sample mode
+NUM_VIDEOS=""  # empty = download all
 
 # --- Parse flags ---
 SAMPLE=false
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --sample)
             SAMPLE=true
             NUM_VIDEOS=1
+            shift
+            ;;
+        --num_videos)
+            NUM_VIDEOS="$2"
+            shift 2
             ;;
         *)
-            echo "Unknown argument: $arg"
-            echo "Usage: bash download_ff_data.sh [--sample]"
+            echo "Unknown argument: $1"
+            echo "Usage: bash download_ff_data.sh [--sample] [--num_videos N]"
             exit 1
             ;;
     esac
@@ -37,7 +43,13 @@ done
 echo "============================================="
 echo "  FaceForensics++ Downloader + Extractor"
 echo "============================================="
-echo "  Mode:        $([ "$SAMPLE" = true ] && echo 'SAMPLE (1 video each)' || echo 'FULL (all videos)')"
+if [ "$SAMPLE" = true ]; then
+    echo "  Mode:        SAMPLE (1 video each)"
+elif [ -n "$NUM_VIDEOS" ]; then
+    echo "  Mode:        PARTIAL ($NUM_VIDEOS videos each)"
+else
+    echo "  Mode:        FULL (all videos)"
+fi
 echo "  Compression: $COMPRESSION"
 echo "  Server:      $SERVER"
 echo "  Output:      $OUTPUT_BASE"
@@ -69,7 +81,7 @@ run_download() {
     echo "  Output:  $output"
     echo "----------------------------------------------"
 
-    if [ "$SAMPLE" = true ]; then
+    if [ -n "$NUM_VIDEOS" ]; then
         echo "" | python3 "$DOWNLOAD_SCRIPT" "$output" \
             -d "$dataset" \
             -c "$COMPRESSION" \
