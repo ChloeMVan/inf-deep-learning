@@ -15,22 +15,22 @@ from os.path import join
 # !ls FaceForensics/download.py
 # !ls FaceForensics/dataset/extract_compressed_videos.py
 
-# !sed -i 's|OUTPUT_BASE=~/Documents/INF-Deep_Learning/FF_data|OUTPUT_BASE=/content/FF_data|g' download_ff_data.sh
+# !sed -i 's|OUTPUT_BASE=~/Documents/INF-Deep_LearningFF_data|OUTPUT_BASE=FF_data|g' download_ff_data.sh
 
 # # Verify
 # !grep "OUTPUT_BASE" download_ff_data.sh
 
 import subprocess
-subprocess.run(['bash', 'download_ff_data.sh', '--num_videos', '10', '--frame_skip', '20'])
+subprocess.run(['bash', 'download_ff_data.sh', '--num_videos', '1', '--frame_skip', '20'])
 
 all_dirs = [
-    '/content/FF_data/real/original_sequences/youtube/c40/images',
-    '/content/FF_data/fake/manipulated_sequences/Deepfakes/c40/images',
-    '/content/FF_data/DFD_real/original_sequences/actors/c40/images',
-    '/content/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
-    '/content/FF_data/Face2Face/manipulated_sequences/Face2Face/c40/images',
-    '/content/FF_data/FaceSwap/manipulated_sequences/FaceSwap/c40/images',
-    '/content/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images'
+    'FF_data/real/original_sequences/youtube/c40/images',
+    'FF_data/fake/manipulated_sequences/Deepfakes/c40/images',
+    'FF_data/DFD_real/original_sequences/actors/c40/images',
+    'FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
+    'FF_data/Face2Face/manipulated_sequences/Face2Face/c40/images',
+    'FF_data/FaceSwap/manipulated_sequences/FaceSwap/c40/images',
+    'FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images'
 ]
 
 for d in all_dirs:
@@ -40,14 +40,14 @@ for d in all_dirs:
 import os
 
 extractions = {
-    '/content/FF_data/real/original_sequences/youtube/c40/videos':
-        '/content/FF_data/real/original_sequences/youtube/c40/images',
-    '/content/FF_data/DFD_real/original_sequences/actors/c40/videos':
-        '/content/FF_data/DFD_real/original_sequences/actors/c40/images',
-    '/content/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/videos':
-        '/content/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
-    '/content/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/videos':
-        '/content/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images',
+    'FF_data/real/original_sequences/youtube/c40/videos':
+        'FF_data/real/original_sequences/youtube/c40/images',
+    'FF_data/DFD_real/original_sequences/actors/c40/videos':
+        'FF_data/DFD_real/original_sequences/actors/c40/images',
+    'FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/videos':
+        'FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
+    'FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/videos':
+        'FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images',
 }
 
 for video_dir, output_dir in extractions.items():
@@ -251,13 +251,13 @@ for epoch in range(NUM_EPOCHS):
 
 import os
 
-save_path = '/content/resnet50_baseline.pth'
+save_path = '/resnet50_baseline.pth'
 torch.save(model.state_dict(), save_path)
 print(f"Model saved to {save_path}")
 
 model = models.resnet50(pretrained=False)
 model.fc = nn.Linear(model.fc.in_features, 2)
-model.load_state_dict(torch.load('/content/resnet50_baseline.pth',
+model.load_state_dict(torch.load('/resnet50_baseline.pth',
                                   map_location=device))
 model = model.to(device)
 model.eval()
