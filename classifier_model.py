@@ -52,13 +52,17 @@ class AIClassifier(nn.Module):
             nn.ReLU(),
             nn.Dropout(head_drop),
             nn.Linear(2**6, 1),
-            nn.Sigmoid()
+            # using logits loss for training, so don't do sigmoid here
         )
+        self.sig = nn.Sigmoid()
     
     def forward(self, frames):
         # frames: B x C x F x W x H
         features = self.img_component(frames)
-        return self.classifier(features)
+        output = self.classifier(features)
+        if not self.training:
+            output = self.sig(output)
+        return output
 
 
 
