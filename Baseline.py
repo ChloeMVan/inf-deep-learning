@@ -24,13 +24,13 @@ import subprocess
 subprocess.run(['bash', 'download_ff_data.sh', '--num_videos', '1', '--frame_skip', '20'])
 
 all_dirs = [
-    './Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/fake/manipulated_sequences/Deepfakes/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/Face2Face/manipulated_sequences/Face2Face/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/FaceSwap/manipulated_sequences/FaceSwap/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images'
+    '~/Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/fake/manipulated_sequences/Deepfakes/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/Face2Face/manipulated_sequences/Face2Face/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/FaceSwap/manipulated_sequences/FaceSwap/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images'
 ]
 
 for d in all_dirs:
@@ -40,14 +40,14 @@ for d in all_dirs:
 import os
 
 extractions = {
-    './Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/videos':
-        './Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/videos':
-        './Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/videos':
-        './Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
-    './Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/videos':
-        './Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/videos':
+        '~/Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/videos':
+        '~/Documents/INF-Deep_Learning/FF_data/DFD_real/original_sequences/actors/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/videos':
+        '~/Documents/INF-Deep_Learning/FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images',
+    '~/Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/videos':
+        '~/Documents/INF-Deep_Learning/FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images',
 }
 
 for video_dir, output_dir in extractions.items():
