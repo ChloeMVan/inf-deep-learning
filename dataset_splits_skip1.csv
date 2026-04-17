@@ -1,0 +1,14 @@
+video_path,frame_0,frame_1,frame_2,frame_3,frame_4,frame_5,frame_6,frame_7,frame_8,frame_9,label
+FF_data/real/original_sequences/youtube/c40/images/585,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,0
+FF_data/fake/manipulated_sequences/Deepfakes/c40/images/585_599,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,1
+FF_data/DFD_real/original_sequences/actors/c40/images/07__talking_against_wall,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,0
+FF_data/DFD_real/original_sequences/actors/c40/images/07__talking_against_wall,0200.png,0220.png,0240.png,0260.png,0280.png,0300.png,0320.png,0340.png,0360.png,0380.png,0
+FF_data/DFD_real/original_sequences/actors/c40/images/07__talking_against_wall,0400.png,0420.png,0440.png,0460.png,0480.png,0500.png,0520.png,0540.png,0560.png,0580.png,0
+FF_data/DFD_real/original_sequences/actors/c40/images/07__talking_against_wall,0600.png,0620.png,0640.png,0660.png,0680.png,0700.png,0720.png,0740.png,0760.png,0780.png,0
+FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images/01_11__talking_against_wall__9229VVZ3,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,1
+FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images/01_11__talking_against_wall__9229VVZ3,0200.png,0220.png,0240.png,0260.png,0280.png,0300.png,0320.png,0340.png,0360.png,0380.png,1
+FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images/01_11__talking_against_wall__9229VVZ3,0400.png,0420.png,0440.png,0460.png,0480.png,0500.png,0520.png,0540.png,0560.png,0580.png,1
+FF_data/DFD_fake/manipulated_sequences/DeepFakeDetection/c40/images/01_11__talking_against_wall__9229VVZ3,0600.png,0620.png,0640.png,0660.png,0680.png,0700.png,0720.png,0740.png,0760.png,0780.png,1
+FF_data/Face2Face/manipulated_sequences/Face2Face/c40/images/585_599,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,1
+FF_data/FaceSwap/manipulated_sequences/FaceSwap/c40/images/585_599,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,1
+FF_data/NeuralTextures/manipulated_sequences/NeuralTextures/c40/images/585_599,0000.png,0020.png,0040.png,0060.png,0080.png,0100.png,0120.png,0140.png,0160.png,0180.png,1
