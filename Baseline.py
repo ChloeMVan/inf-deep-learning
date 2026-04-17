@@ -327,3 +327,44 @@ print(f"F1 Score (weighted): {f1_score(y_true, y_pred, average='weighted'):.4f}"
 print(f"F1 Score (macro):    {f1_score(y_true, y_pred, average='macro'):.4f}")
 
 
+'''
+=== BASELINE RESULTS (Video Level) ===
+
+y_true: [0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1]
+y_pred: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+Unique classes in y_true: {0, 1}
+Unique classes in y_pred: {0, 1}
+              precision    recall  f1-score   support
+
+    Real (0)       0.00      0.00      0.00         4
+    Fake (1)       0.67      0.80      0.73        10
+
+    accuracy                           0.57        14
+   macro avg       0.33      0.40      0.36        14
+weighted avg       0.48      0.57      0.52        14
+
+Confusion Matrix:
+[[0 4]
+ [2 8]]
+
+F1 Score (weighted): 0.5195
+F1 Score (macro):    0.3636
+
+=== BASELINE RESULTS (Video Level) ===
+
+              precision    recall  f1-score   support
+
+    Real (0)       0.00      0.00      0.00         4
+    Fake (1)       0.67      0.80      0.73        10
+
+    accuracy                           0.57        14
+   macro avg       0.33      0.40      0.36        14
+weighted avg       0.48      0.57      0.52        14
+
+Confusion Matrix:
+[[0 4]
+ [2 8]]
+
+F1 Score (weighted): 0.5195
+F1 Score (macro):    0.3636
+'''
