@@ -248,6 +248,13 @@ for epoch in range(NUM_EPOCHS):
         total += labels.size(0)
 
     print(f"Epoch {epoch+1}/{NUM_EPOCHS} | Loss: {running_loss/len(train_loader):.4f} | Acc: {correct/total:.4f}")
+'''
+Epoch 1/5 | Loss: 0.2485 | Acc: 0.8590
+Epoch 2/5 | Loss: 0.1972 | Acc: 0.8773
+Epoch 3/5 | Loss: 0.1965 | Acc: 0.8882
+Epoch 4/5 | Loss: 0.1702 | Acc: 0.9014
+Epoch 5/5 | Loss: 0.1563 | Acc: 0.9075
+'''
 
 import os
 
