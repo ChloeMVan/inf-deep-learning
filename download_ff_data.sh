@@ -10,6 +10,8 @@
 #   High quality:     bash download_ff_data.sh --hq
 #   Custom compress:  bash download_ff_data.sh --compression c0  (c0=raw, c23=hq, c40=lq)
 #   Skip frames:      bash download_ff_data.sh --frame_skip 50  (keep frame 0, 50, 100, ...)
+#   One category:     bash download_ff_data.sh --category DFD_real
+#                     Valid names: real, fake, Face2Face, FaceSwap, NeuralTextures, DFD_real, DFD_fake
 # =============================================================================
 
 # --- Configuration ---
@@ -21,6 +23,7 @@ COMPRESSION="c40"
 SERVER="EU2"
 NUM_VIDEOS=""   # empty = download all
 FRAME_SKIP=""   # empty = keep all frames
+CATEGORY=""     # empty = all categories
 
 # --- Parse flags ---
 SAMPLE=false
@@ -47,9 +50,14 @@ while [[ $# -gt 0 ]]; do
             FRAME_SKIP="$2"
             shift 2
             ;;
+        --category)
+            CATEGORY="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: bash download_ff_data.sh [--sample] [--num_videos N] [--hq] [--compression c0|c23|c40] [--frame_skip N]"
+            echo "Usage: bash download_ff_data.sh [--sample] [--num_videos N] [--hq] [--compression c0|c23|c40] [--frame_skip N] [--category NAME]"
+            echo "Valid category names: real, fake, Face2Face, FaceSwap, NeuralTextures, DFD_real, DFD_fake"
             exit 1
             ;;
     esac
@@ -68,6 +76,7 @@ else
 fi
 echo "  Compression: $COMPRESSION  (c0=raw, c23=high quality, c40=low quality)"
 echo "  Frame skip:  $([ -n "$FRAME_SKIP" ] && echo "keep every $FRAME_SKIP frames (0, $FRAME_SKIP, $((FRAME_SKIP*2)), ...)" || echo 'all frames')"
+echo "  Category:    $([ -n "$CATEGORY" ] && echo "$CATEGORY only" || echo 'all')"
 echo "  Server:      $SERVER"
 echo "  Output:      $OUTPUT_BASE"
 echo "============================================="
@@ -85,6 +94,10 @@ if [ ! -f "$EXTRACT_SCRIPT" ]; then
     echo "Make sure extract_compressed_videos.py is in the dataset/ subfolder."
     exit 1
 fi
+
+# --- Category filter ---
+# Returns true if CATEGORY is unset or matches the given name
+should_run() { [ -z "$CATEGORY" ] || [ "$CATEGORY" = "$1" ]; }
 
 # --- Download function ---
 run_download() {
@@ -186,13 +199,13 @@ echo "  STEP 1: Downloading videos..."
 echo "============================================="
 echo ""
 
-run_download "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
-run_download "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
-run_download "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
-run_download "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
-run_download "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
-run_download "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
-run_download "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
+should_run "real"           && run_download "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
+should_run "Face2Face"      && run_download "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
+should_run "FaceSwap"       && run_download "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
+should_run "NeuralTextures" && run_download "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
+should_run "fake"           && run_download "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
+should_run "DFD_real"       && run_download "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
+should_run "DFD_fake"       && run_download "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
 
 # =============================================================================
 # STEP 2: Frame Extraction
@@ -202,13 +215,13 @@ echo "  STEP 2: Extracting frames..."
 echo "============================================="
 echo ""
 
-run_extract "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
-run_extract "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
-run_extract "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
-run_extract "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
-run_extract "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
-run_extract "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
-run_extract "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
+should_run "real"           && run_extract "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
+should_run "Face2Face"      && run_extract "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
+should_run "FaceSwap"       && run_extract "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
+should_run "NeuralTextures" && run_extract "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
+should_run "fake"           && run_extract "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
+should_run "DFD_real"       && run_extract "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
+should_run "DFD_fake"       && run_extract "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
 
 # =============================================================================
 # STEP 3: Frame Skipping (only if --frame_skip was given)
@@ -219,13 +232,13 @@ if [ -n "$FRAME_SKIP" ]; then
     echo "============================================="
     echo ""
 
-    run_skip_frames "Original (YouTube real videos)"   "$OUTPUT_BASE/real"
-    run_skip_frames "Face2Face (manipulated)"          "$OUTPUT_BASE/Face2Face"
-    run_skip_frames "FaceSwap (manipulated)"           "$OUTPUT_BASE/FaceSwap"
-    run_skip_frames "NeuralTextures (manipulated)"     "$OUTPUT_BASE/NeuralTextures"
-    run_skip_frames "Deepfakes (manipulated)"          "$OUTPUT_BASE/fake"
-    run_skip_frames "DFD Real (Google actor videos)"   "$OUTPUT_BASE/DFD_real"
-    run_skip_frames "DFD Fake (Google deepfakes)"      "$OUTPUT_BASE/DFD_fake"
+    should_run "real"           && run_skip_frames "Original (YouTube real videos)"   "$OUTPUT_BASE/real"
+    should_run "Face2Face"      && run_skip_frames "Face2Face (manipulated)"          "$OUTPUT_BASE/Face2Face"
+    should_run "FaceSwap"       && run_skip_frames "FaceSwap (manipulated)"           "$OUTPUT_BASE/FaceSwap"
+    should_run "NeuralTextures" && run_skip_frames "NeuralTextures (manipulated)"     "$OUTPUT_BASE/NeuralTextures"
+    should_run "fake"           && run_skip_frames "Deepfakes (manipulated)"          "$OUTPUT_BASE/fake"
+    should_run "DFD_real"       && run_skip_frames "DFD Real (Google actor videos)"   "$OUTPUT_BASE/DFD_real"
+    should_run "DFD_fake"       && run_skip_frames "DFD Fake (Google deepfakes)"      "$OUTPUT_BASE/DFD_fake"
 fi
 
 echo "============================================="
