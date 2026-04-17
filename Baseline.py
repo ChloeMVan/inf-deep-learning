@@ -21,7 +21,7 @@ from os.path import join
 # !grep "OUTPUT_BASE" download_ff_data.sh
 
 import subprocess
-subprocess.run(['bash', 'download_ff_data.sh', '--num_videos', '1', '--frame_skip', '20'])
+subprocess.run(['bash', 'download_ff_data.sh', '--num_videos', '10', '--frame_skip', '20'])
 
 all_dirs = [
     '/root/Documents/INF-Deep_Learning/FF_data/real/original_sequences/youtube/c40/images',
