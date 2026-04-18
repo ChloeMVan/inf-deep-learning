@@ -21,37 +21,35 @@ class AIClassifier(nn.Module):
         self.frames = frames
         self.width = frame_dim[0]
         self.height = frame_dim[1]
-        self.img_avg_pool = nn.AvgPool3d((1, 2, 2), stride=(1, 2, 2))
+        self.img_pool = nn.MaxPool3d((1, 2, 2), stride=(1, 2, 2))
         self.img_component = nn.Sequential(
             make_conv_block(3, init_channels), 
-            self.img_avg_pool,
+            self.img_pool,
             # B x 16 x 8 x 250 x 250
             make_conv_block(init_channels, init_channels * 2), 
-            self.img_avg_pool,
+            self.img_pool,
             # B x 32 x 6 x 125 x 125
             make_conv_block(init_channels * 2, init_channels * 4),
-            self.img_avg_pool,
+            self.img_pool,
             # B x 64 x 4 x 62 x 62
             make_conv_block(init_channels * 4, init_channels * 8),
-            self.img_avg_pool,
+            self.img_pool,
             # B x 128 x 2 x 31 x 31
             make_conv_block(init_channels * 8, init_channels * 16, kernel_size=(2, 5, 5)),
-            self.img_avg_pool,
+            self.img_pool,
             # B x 256 x 1 x 15 x 15
+            nn.AdaptiveMaxPool3d((1, 4, 4)),
             nn.Flatten(),
-            # B x 57,600
+            # B x 
         )
         self.classifier = nn.Sequential(
-            nn.Linear(init_channels * 16 * (15**2), 2**12),
+            nn.Linear(4096, 512),
             nn.ReLU(),
             nn.Dropout(head_drop),
-            nn.Linear(2**12, 2**9),
+            nn.Linear(512, 128),
             nn.ReLU(),
             nn.Dropout(head_drop),
-            nn.Linear(2**9, 2**6),
-            nn.ReLU(),
-            nn.Dropout(head_drop),
-            nn.Linear(2**6, 1),
+            nn.Linear(128, 1),
             # using logits loss for training, so don't do sigmoid here
         )
         self.sig = nn.Sigmoid()
@@ -78,9 +76,30 @@ if __name__ == "__main__":
     out = model(dummy)
     print("Done predicting")
     labels = torch.Tensor([0.0, 1.0]).unsqueeze(1)
-    loss = criterion(out, labels)
+    #loss = criterion(out, labels)
     print(f"Output shape: {out.shape}") 
     print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
     print(f"Img params: {sum(p.numel() for p in model.img_component.parameters()):,}")
     print(f"Head params: {sum(p.numel() for p in model.classifier.parameters()):,}")
-    print(f"Loss: {loss.item():.4f}")
+    # print(f"Loss: {loss.item():.4f}")
+
+
+
+# check with dummy data 
+if __name__ == "__main__":
+    print("start")
+    model = AIClassifier()
+    print("Model created")
+    criterion = nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=.001)
+    dummy = torch.randn(2, 3, 10, 500, 500)
+    print("Predicting")
+    out = model(dummy)
+    print("Done predicting")
+    labels = torch.Tensor([0.0, 1.0]).unsqueeze(1)
+    #loss = criterion(out, labels)
+    print(f"Output shape: {out.shape}") 
+    print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Img params: {sum(p.numel() for p in model.img_component.parameters()):,}")
+    print(f"Head params: {sum(p.numel() for p in model.classifier.parameters()):,}")
+    # print(f"Loss: {loss.item():.4f}")
