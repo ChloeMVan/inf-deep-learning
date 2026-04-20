@@ -58,8 +58,10 @@ def extract_method_videos(data_path, dataset, compression):
     images_path = join(data_path, DATASET_PATHS[dataset], compression, 'images')
     for video in tqdm(os.listdir(videos_path)):
         image_folder = video.split('.')[0]
-        extract_frames(join(videos_path, video),
-                       join(images_path, image_folder))
+        output_path = join(images_path, image_folder)
+        if os.path.isdir(output_path) and os.listdir(output_path):
+            continue
+        extract_frames(join(videos_path, video), output_path)
 
 
 if __name__ == '__main__':
