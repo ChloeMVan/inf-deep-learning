@@ -9,7 +9,7 @@
 #   N videos:         bash download_ff_data.sh --num_videos 5
 #   High quality:     bash download_ff_data.sh --hq
 #   Custom compress:  bash download_ff_data.sh --compression c0  (c0=raw, c23=hq, c40=lq)
-#   Skip frames:      bash download_ff_data.sh --frame_skip 50  (keep frame 0, 50, 100, ...)
+#   Skip frames:      bash download_ff_data.sh --frame_skip 20  (keep frame 0, 20, 40, ...)
 #   One category:     bash download_ff_data.sh --category DFD_real
 #                     Valid names: real, fake, Face2Face, FaceSwap, NeuralTextures, DFD_real, DFD_fake
 # =============================================================================
@@ -24,6 +24,7 @@ SERVER="EU2"
 NUM_VIDEOS=""   # empty = download all
 FRAME_SKIP=""   # empty = keep all frames
 CATEGORY=""     # empty = all categories
+BATCH_SIZE=10   # extract this many videos before skipping frames
 
 # --- Parse flags ---
 SAMPLE=false
@@ -75,7 +76,11 @@ else
     echo "  Mode:        FULL (all videos)"
 fi
 echo "  Compression: $COMPRESSION  (c0=raw, c23=high quality, c40=low quality)"
-echo "  Frame skip:  $([ -n "$FRAME_SKIP" ] && echo "keep every $FRAME_SKIP frames (0, $FRAME_SKIP, $((FRAME_SKIP*2)), ...)" || echo 'all frames')"
+if [ -n "$FRAME_SKIP" ]; then
+    echo "  Frame skip:  keep every $FRAME_SKIP frames — applied after every $BATCH_SIZE videos"
+else
+    echo "  Frame skip:  all frames kept"
+fi
 echo "  Category:    $([ -n "$CATEGORY" ] && echo "$CATEGORY only" || echo 'all')"
 echo "  Server:      $SERVER"
 echo "  Output:      $OUTPUT_BASE"
@@ -84,19 +89,16 @@ echo ""
 
 # --- Check scripts exist ---
 if [ ! -f "$DOWNLOAD_SCRIPT" ]; then
-    echo "ERROR: download.py not found at $SCRIPT_DIR"
-    echo "Make sure download.py is in the same folder as this script."
+    echo "ERROR: download.py not found at $DOWNLOAD_SCRIPT"
     exit 1
 fi
 
 if [ ! -f "$EXTRACT_SCRIPT" ]; then
-    echo "ERROR: extract_compressed_videos.py not found at $SCRIPT_DIR/dataset/"
-    echo "Make sure extract_compressed_videos.py is in the dataset/ subfolder."
+    echo "ERROR: extract_compressed_videos.py not found at $EXTRACT_SCRIPT"
     exit 1
 fi
 
 # --- Category filter ---
-# Returns true if CATEGORY is unset or matches the given name
 should_run() { [ -z "$CATEGORY" ] || [ "$CATEGORY" = "$1" ]; }
 
 # --- Download function ---
@@ -107,139 +109,180 @@ run_download() {
 
     echo "----------------------------------------------"
     echo "Downloading: $label"
-    echo "  Dataset: $dataset"
-    echo "  Output:  $output"
+    echo "  Dataset: $dataset  |  Output: $output"
     echo "----------------------------------------------"
 
     if [ -n "$NUM_VIDEOS" ]; then
         echo "" | python3 "$DOWNLOAD_SCRIPT" "$output" \
-            -d "$dataset" \
-            -c "$COMPRESSION" \
-            --server "$SERVER" \
-            --num_videos "$NUM_VIDEOS"
+            -d "$dataset" -c "$COMPRESSION" --server "$SERVER" --num_videos "$NUM_VIDEOS"
     else
         echo "" | python3 "$DOWNLOAD_SCRIPT" "$output" \
-            -d "$dataset" \
-            -c "$COMPRESSION" \
-            --server "$SERVER"
+            -d "$dataset" -c "$COMPRESSION" --server "$SERVER"
     fi
 
-    if [ $? -eq 0 ]; then
-        echo "✓ Done: $label"
-    else
-        echo "✗ Failed: $label"
-    fi
+    if [ $? -eq 0 ]; then echo "✓ Downloaded: $label"
+    else               echo "✗ Download failed: $label"; fi
     echo ""
 }
 
-# --- Frame skip function ---
-# Walks every per-video subfolder under data_path/**/<compression>/images/
-# and deletes all PNGs whose 0-based sorted index is not a multiple of FRAME_SKIP.
-run_skip_frames() {
-    local label=$1
-    local data_path=$2
-
-    echo "----------------------------------------------"
-    echo "Skipping frames: $label  (keep every $FRAME_SKIP)"
-    echo "  Path: $data_path"
-    echo "----------------------------------------------"
-
-    local kept=0
-    local deleted=0
-
-    # Frames live at: data_path/**/<compression>/images/<video_id>/<frame>.png
-    while IFS= read -r video_dir; do
-        local idx=0
-        while IFS= read -r frame; do
-            if (( idx % FRAME_SKIP == 0 )); then
-                (( kept++ ))
-            else
-                rm "$frame"
-                (( deleted++ ))
-            fi
-            (( idx++ ))
-        done < <(find "$video_dir" -maxdepth 1 -name "*.png" | sort)
-    done < <(find "$data_path" -type d -name "images" | xargs -I{} find {} -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
-
-    echo "  Kept: $kept  |  Deleted: $deleted"
-    echo "✓ Done: $label"
-    echo ""
-}
-
-# --- Extract function ---
-run_extract() {
+# --- Batched extract + immediate frame skip ---
+#
+# The extract script sees only BATCH_SIZE videos at a time via a temp dir of
+# symlinks — the original video files are never moved. After each batch is
+# extracted the frames are immediately skipped/deleted before the next batch
+# starts, keeping peak PNG storage to ~BATCH_SIZE videos at a time.
+#
+# The videos directory is located dynamically under data_path (FF++ uses
+# different sub-paths per category, e.g. original_sequences/actors/c40/videos).
+# The images output dir is derived by replacing "videos" with "images" at the
+# same level, matching what the extract script produces.
+run_batched_extract_and_skip() {
     local label=$1
     local dataset=$2
     local data_path=$3
 
     echo "----------------------------------------------"
-    echo "Extracting frames: $label"
-    echo "  Dataset: $dataset"
-    echo "  Path:    $data_path"
+    echo "Extracting: $label"
+    echo "  Path: $data_path  |  Batch size: $BATCH_SIZE"
     echo "----------------------------------------------"
 
-    python3 "$EXTRACT_SCRIPT" \
-        --data_path "$data_path" \
-        --dataset "$dataset" \
-        --compression "$COMPRESSION"
+    # Locate the videos directory — FF++ layout varies per category
+    local src_video_dir
+    src_video_dir=$(find "$data_path" -type d -name "videos" 2>/dev/null | head -1)
 
-    if [ $? -eq 0 ]; then
-        echo "✓ Done: $label"
-    else
+    if [ -z "$src_video_dir" ]; then
+        echo "  No 'videos' directory found under $data_path"
         echo "✗ Failed: $label"
+        echo ""
+        return 1
     fi
+
+    echo "  Videos dir: $src_video_dir"
+
+    # Images are written alongside videos/ at the same level
+    local dst_images_dir="${src_video_dir%/videos}/images"
+
+    # Relative sub-path from data_path to the videos dir parent
+    # e.g. data_path=.../DFD_real  src_video_dir=.../DFD_real/original_sequences/actors/c40/videos
+    # → rel_parent = original_sequences/actors/c40
+    local rel_parent
+    rel_parent=$(dirname "${src_video_dir#"$data_path"/}")
+
+    # Collect all video files for this category
+    local all_videos=()
+    while IFS= read -r f; do all_videos+=("$f"); done \
+        < <(find "$src_video_dir" -maxdepth 1 -type f 2>/dev/null | sort)
+
+    if [ ${#all_videos[@]} -eq 0 ]; then
+        echo "  No video files found in $src_video_dir"
+        echo "✗ Failed: $label"
+        echo ""
+        return 1
+    fi
+
+    echo "  Found ${#all_videos[@]} videos"
+
+    # Temp dir mirrors the exact sub-path structure so the extract script
+    # finds videos and writes images in the expected locations.
+    local tmp_root
+    tmp_root=$(mktemp -d)
+    mkdir -p "$tmp_root/$rel_parent/videos"
+    mkdir -p "$dst_images_dir"
+
+    local i=0 total=${#all_videos[@]}
+    local total_kept=0 total_deleted=0
+
+    while (( i < total )); do
+        local batch_end=$(( i + BATCH_SIZE ))
+        (( batch_end > total )) && batch_end=$total
+
+        echo ""
+        echo "  --- Batch $((i / BATCH_SIZE + 1)): videos $((i+1))–$batch_end of $total ---"
+
+        # Symlink this batch's video files into the temp dir
+        local batch_ids=()
+        for (( j = i; j < batch_end; j++ )); do
+            local f="${all_videos[$j]}"
+            local base; base=$(basename "$f")
+            ln -sf "$f" "$tmp_root/$rel_parent/videos/$base"
+            batch_ids+=("${base%%.*}")   # strip extension → video id
+        done
+
+        # Extract — script only sees BATCH_SIZE symlinked videos
+        python3 "$EXTRACT_SCRIPT" \
+            --data_path "$tmp_root" \
+            --dataset   "$dataset" \
+            --compression "$COMPRESSION"
+
+        # Move extracted frame dirs to real destination; skip frames immediately
+        for vid_id in "${batch_ids[@]}"; do
+            local src="$tmp_root/$rel_parent/images/$vid_id"
+            [ -d "$src" ] || continue
+
+            mv "$src" "$dst_images_dir/"
+
+            if [ -n "$FRAME_SKIP" ]; then
+                local vid_frames="$dst_images_dir/$vid_id"
+                local idx=0 kept=0 deleted=0
+                while IFS= read -r frame; do
+                    if (( idx % FRAME_SKIP == 0 )); then
+                        (( kept++ ))
+                    else
+                        rm "$frame"
+                        (( deleted++ ))
+                    fi
+                    (( idx++ ))
+                done < <(find "$vid_frames" -maxdepth 1 -name "*.png" | sort)
+
+                echo "    $vid_id: kept $kept / deleted $deleted frames"
+                (( total_kept    += kept    ))
+                (( total_deleted += deleted ))
+            fi
+        done
+
+        # Remove this batch's symlinks before the next iteration
+        for (( j = i; j < batch_end; j++ )); do
+            rm -f "$tmp_root/$rel_parent/videos/$(basename "${all_videos[$j]}")"
+        done
+
+        (( i += BATCH_SIZE ))
+    done
+
+    rm -rf "$tmp_root"
+
+    echo ""
+    if [ -n "$FRAME_SKIP" ]; then
+        echo "  Total frames kept: $total_kept  |  deleted: $total_deleted"
+    fi
+    echo "✓ Done: $label"
     echo ""
 }
 
-# =============================================================================
-# STEP 1: Downloads
-# =============================================================================
-echo "============================================="
-echo "  STEP 1: Downloading videos..."
-echo "============================================="
-echo ""
+# --- Process one category: download then batch-extract+skip ---
+process_category() {
+    local label=$1
+    local dataset=$2
+    local output=$3
 
-should_run "real"           && run_download "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
-should_run "Face2Face"      && run_download "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
-should_run "FaceSwap"       && run_download "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
-should_run "NeuralTextures" && run_download "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
-should_run "fake"           && run_download "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
-should_run "DFD_real"       && run_download "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
-should_run "DFD_fake"       && run_download "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
+    run_download              "$label" "$dataset" "$output"
+    run_batched_extract_and_skip "$label" "$dataset" "$output"
+}
 
 # =============================================================================
-# STEP 2: Frame Extraction
+# Main
 # =============================================================================
 echo "============================================="
-echo "  STEP 2: Extracting frames..."
+echo "  Processing categories..."
 echo "============================================="
 echo ""
 
-should_run "real"           && run_extract "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
-should_run "Face2Face"      && run_extract "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
-should_run "FaceSwap"       && run_extract "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
-should_run "NeuralTextures" && run_extract "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
-should_run "fake"           && run_extract "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
-should_run "DFD_real"       && run_extract "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
-should_run "DFD_fake"       && run_extract "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
-
-# =============================================================================
-# STEP 3: Frame Skipping (only if --frame_skip was given)
-# =============================================================================
-if [ -n "$FRAME_SKIP" ]; then
-    echo "============================================="
-    echo "  STEP 3: Skipping frames (keep every $FRAME_SKIP)..."
-    echo "============================================="
-    echo ""
-
-    should_run "real"           && run_skip_frames "Original (YouTube real videos)"   "$OUTPUT_BASE/real"
-    should_run "Face2Face"      && run_skip_frames "Face2Face (manipulated)"          "$OUTPUT_BASE/Face2Face"
-    should_run "FaceSwap"       && run_skip_frames "FaceSwap (manipulated)"           "$OUTPUT_BASE/FaceSwap"
-    should_run "NeuralTextures" && run_skip_frames "NeuralTextures (manipulated)"     "$OUTPUT_BASE/NeuralTextures"
-    should_run "fake"           && run_skip_frames "Deepfakes (manipulated)"          "$OUTPUT_BASE/fake"
-    should_run "DFD_real"       && run_skip_frames "DFD Real (Google actor videos)"   "$OUTPUT_BASE/DFD_real"
-    should_run "DFD_fake"       && run_skip_frames "DFD Fake (Google deepfakes)"      "$OUTPUT_BASE/DFD_fake"
-fi
+should_run "real"           && process_category "Original (YouTube real videos)"   "original"                   "$OUTPUT_BASE/real"
+should_run "Face2Face"      && process_category "Face2Face (manipulated)"          "Face2Face"                  "$OUTPUT_BASE/Face2Face"
+should_run "FaceSwap"       && process_category "FaceSwap (manipulated)"           "FaceSwap"                   "$OUTPUT_BASE/FaceSwap"
+should_run "NeuralTextures" && process_category "NeuralTextures (manipulated)"     "NeuralTextures"             "$OUTPUT_BASE/NeuralTextures"
+should_run "fake"           && process_category "Deepfakes (manipulated)"          "Deepfakes"                  "$OUTPUT_BASE/fake"
+should_run "DFD_real"       && process_category "DFD Real (Google actor videos)"   "DeepFakeDetection_original" "$OUTPUT_BASE/DFD_real"
+should_run "DFD_fake"       && process_category "DFD Fake (Google deepfakes)"      "DeepFakeDetection"          "$OUTPUT_BASE/DFD_fake"
 
 echo "============================================="
 echo "  All done!"
