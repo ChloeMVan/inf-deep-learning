@@ -12,3 +12,4 @@ bash download_ff_data.sh --num_videos 80 --frame_skip 20 --category NeuralTextur
 bash download_ff_data.sh --num_videos 200 --frame_skip 20 --category DFD_real
 
 bash download_ff_data.sh --num_videos 80 --frame_skip 20 --category DFD_fake
+
