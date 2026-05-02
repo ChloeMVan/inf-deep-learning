@@ -25,4 +25,4 @@ For running 200 epochs, run the whole notebook 'model_train_3D_200v_30.ipynb'.
 
 Running ResNet LSTM:
 
-For running 30 epochs as we did in the first set of results, run the whole notebook 'Baseline_LSTM.ipynb'.
+For running 30 epochs as we did in the second set of results, run the whole notebook 'Baseline_LSTM.ipynb'.
