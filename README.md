@@ -5,11 +5,15 @@ For downloading the dataset, run either the first or second cell to download the
 
 Then run the rest of the notebook.
 
+
+
 Running ResNet-50 Baseline:
 
 For running the Baseline for 100 epochs as we did in the first set of results, run the whole notebook called 'Baseline_100Epochs.ipynb', this will be on whatever dataset was downloaded before.
 
 To run the Baseline for 30 epochs as we did in the second set of results, run the whole notebook called 'Baseline_30Epochs.ipynb'
+
+
 
 Running 3D CNN:
 
@@ -17,3 +21,8 @@ For running 50 epochs as we did in the first set of results, run the whole noteb
 
 For running 200 epochs, run the whole notebook 'model_train_3D_200v_30.ipynb'. 
 
+
+
+Running ResNet LSTM:
+
+For running 30 epochs as we did in the first set of results, run the whole notebook 'Baseline_LSTM.ipynb'.
