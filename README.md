@@ -1,4 +1,5 @@
-Downloading the Dataset:
+
+Downloading the Dataset: (MUST BE DONE BEFORE RUNNING MODELS)
 
 For downloading the dataset, run either the first or second cell to download the subsets of data used ('Download_data.ipynb'). The first cell downloads 50 videos from each category and extracts them into frames. The second cell downloads the larger, more balanced dataset. 
 
